@@ -31,7 +31,15 @@ function app(){
 		if(url !== '/favicon.ico'){
 			const method = req.method;
 			const urlRoute = `${url}/${method}`;
-			routes.get(urlRoute)(req, res);
+			
+			const responseFunction = routes.get(urlRoute) || null;
+			
+			if (responseFunction === null){
+				res.resObject.writeHead(404, {'Content-Type': 'text/plain'});
+				res.resObject.end('404 - Not Found');
+			} else{
+				responseFunction(req, res);
+			}
 		}
 	}
 
@@ -39,12 +47,13 @@ function app(){
 	return {get, post, routes, server}
 }
 
-function response(res){
+function response(resObject){
 	function send(content){
-		res.end(content);
+		resObject.end(content);
 	}
+	
 
-	return{send,}
+	return{send, resObject}
 }
 
 test = app();
