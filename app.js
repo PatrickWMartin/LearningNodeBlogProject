@@ -14,21 +14,24 @@ function app(){
 	}
 	
 	function get(path, func){
+		if (typeof func !== 'function')
+			throw new Error('get callback must be a function');
+
 		routes.set(`${path}/GET`, func)
 	}
 	function post(path, func){
+		if (typeof func !== 'function')
+			throw new Error('post callback must be a function');
 		routes.set(`${path}/POST`, func)
 	}
 
-	function requestHandler(req, res){
+	function requestHandler(req, responseObject){
 		const url = req.url;
+		res = response(responseObject);
 		if(url !== '/favicon.ico'){
 			const method = req.method;
 			const urlRoute = `${url}/${method}`;
-			console.log(routes)
-			console.log(routes.get(urlRoute)(req, res));
-			res.write("Hello");
-			res.end();
+			routes.get(urlRoute)(req, res);
 		}
 	}
 
@@ -36,12 +39,19 @@ function app(){
 	return {get, post, routes, server}
 }
 
+function response(res){
+	function send(content){
+		res.end(content);
+	}
+
+	return{send,}
+}
 
 test = app();
+
 test.get('/', (req, res) => {
-	//res.send('Hello World');
+	res.send('Hello World');
 	console.log('in the index');
 });
-test.get('/hello', '2');
+
 test.server();
-	//.listen(8000);
