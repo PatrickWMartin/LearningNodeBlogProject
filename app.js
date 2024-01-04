@@ -1,6 +1,6 @@
 const http = require('http');
 const fs = require('fs');
-
+const response = require('./response');
 function app(){
 	const routes = new Map();
 
@@ -17,12 +17,22 @@ function app(){
 		if (typeof func !== 'function')
 			throw new Error('get callback must be a function');
 
-		routes.set(`${path}/GET`, func)
+		routes.set(`${path}:GET`, func)
 	}
 	function post(path, func){
 		if (typeof func !== 'function')
 			throw new Error('post callback must be a function');
-		routes.set(`${path}/POST`, func)
+		routes.set(`${path}:POST`, func)
+	}
+	function put(path, func){
+		if (typeof func !== 'function')
+			throw new Error('post callback must be a function');
+		routes.set(`${path}:PUT`, func)
+	}
+	function del(path, func){
+		if (typeof func !== 'function')
+			throw new Error('post callback must be a function');
+		routes.set(`${path}:DELETE`, func)
 	}
 
 	function requestHandler(req, responseObject){
@@ -30,7 +40,7 @@ function app(){
 		res = response(responseObject);
 		if(url !== '/favicon.ico'){
 			const method = req.method;
-			const urlRoute = `${url}/${method}`;
+			const urlRoute = `${url}:${method}`;
 			
 			const responseFunction = routes.get(urlRoute) || null;
 			
@@ -47,14 +57,6 @@ function app(){
 	return {get, post, routes, server}
 }
 
-function response(resObject){
-	function send(content){
-		resObject.end(content);
-	}
-	
-
-	return{send, resObject}
-}
 
 test = app();
 
