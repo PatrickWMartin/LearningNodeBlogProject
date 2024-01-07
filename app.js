@@ -1,68 +1,61 @@
 const http = require('http');
 const fs = require('fs');
 const response = require('./response');
-function app(){
-	const routes = new Map();
-
-	function server(port=8000, callBack) {
-		console.log(`Listening on port ${port}...`)
-		return http.createServer(requestHandler).listen(port, () => {
-			if (callBack){
-				console.log("hello sir");
-			}
-		});
-	}
-	
-	function get(path, func){
-		if (typeof func !== 'function')
-			throw new Error('get callback must be a function');
-
-		routes.set(`${path}:GET`, func)
-	}
-	function post(path, func){
-		if (typeof func !== 'function')
-			throw new Error('post callback must be a function');
-		routes.set(`${path}:POST`, func)
-	}
-	function put(path, func){
-		if (typeof func !== 'function')
-			throw new Error('post callback must be a function');
-		routes.set(`${path}:PUT`, func)
-	}
-	function del(path, func){
-		if (typeof func !== 'function')
-			throw new Error('post callback must be a function');
-		routes.set(`${path}:DELETE`, func)
-	}
-
-	function requestHandler(req, responseObject){
-		const url = req.url;
-		res = response(responseObject);
-		if(url !== '/favicon.ico'){
-			const method = req.method;
-			const urlRoute = `${url}:${method}`;
-			
-			const responseFunction = routes.get(urlRoute) || null;
-			
-			if (responseFunction === null){
-				res.resObject.writeHead(404, {'Content-Type': 'text/plain'});
-				res.resObject.end('404 - Not Found');
-			} else{
-				responseFunction(req, res);
-			}
-		}
-	}
 
 
-	return {get, post, routes, server}
+function expresso() {
+  const routes = new Map();
+  const middleware = [];
+
+  function get(path, callback) {
+    if (typeof callback !== 'function'){
+      throw new Error('Callback must be a function');
+    }
+    routes.set(`${path}:GET`, callback);
+  }
+
+  function post(path, callback) {
+    if (typeof callback !== 'function'){
+      throw new Error('Callback must be a function');
+    }
+    routes.set(`${path}:POST`, callback)
+  }
+
+  function handleRequest(reqObject, resObject) {
+    const { url, method } = reqObject;
+    const res = response(resObject);
+    const routeHandler = routes.get(`${url}:${method}`);
+    if (routeHandler) {
+      routeHandler(reqObject, res);
+    } else {
+      res.statusCode = 404;
+      res.end('Not Found');
+    }
+  }
+
+  function listen(port, callback) {
+    const http = require('http');
+    const server = http.createServer((req, res) => {
+        handleRequest(req, res);
+    });
+
+    server.listen(port, callback);
+  }
+
+  return {
+    get,
+    post,
+    listen
+  };
 }
 
+const app = expresso();
+const port = 3000;
 
-test = app();
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
 
-test.get('/', (req, res) => {
-	res.send('Hello World');
-	console.log('in the index');
-});
-
-test.server();
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
