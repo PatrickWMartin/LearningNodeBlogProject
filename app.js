@@ -1,11 +1,12 @@
 const http = require('http');
 const fs = require('fs');
+const path = require('path');
 const response = require('./response');
 
 
 function expresso() {
   const routes = new Map();
-  const middleware = [];
+  const middlewareStack = [];
 
   function get(path, callback) {
     if (typeof callback !== 'function'){
@@ -20,7 +21,12 @@ function expresso() {
     }
     routes.set(`${path}:POST`, callback)
   }
-
+  function use(middleware){
+    middlewareStack.push(middleware);
+  }
+  function static(root){
+   //Need to understand middleware before implementing this 
+  }
   function handleRequest(reqObject, resObject) {
     const { url, method } = reqObject;
     const res = response(resObject);
@@ -36,7 +42,13 @@ function expresso() {
   function listen(port, callback) {
     const http = require('http');
     const server = http.createServer((req, res) => {
+      if (middlewareStack){
+        middlewareStack[0](req, res, () => {
         handleRequest(req, res);
+        });
+      } else{
+        handleRequest(req, res);
+      }
     });
 
     server.listen(port, callback);
@@ -45,12 +57,20 @@ function expresso() {
   return {
     get,
     post,
-    listen
+    listen,
+    use
   };
 }
 
 const app = expresso();
 const port = 3000;
+
+const myLogger = function (req, res, next){
+  console.log('logged');
+  next();
+}
+
+app.use(myLogger);
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
